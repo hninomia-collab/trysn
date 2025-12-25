@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>竹影缭乱</title>
+    <style>
+      @import url('https://fonts.font.im/css?family=Montserrat:400,600');
+      @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
+
+      :root {
+        --cealis-jade-light: #B2B59C;
+        --cealis-charcoal: #3B3C36;
+        --cealis-rain-color: rgba(178, 181, 156, 0.4);
+      }
+
+       .cealis-player-container {
+    position: fixed;
+    right: 20px;
+    top: 20px; 
+    z-index: 10001; 
+    font-family: 'Montserrat', sans-serif;
+    color: var(--cealis-charcoal);
+    user-select: none;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  /* 迷你胶囊状态 */
+  .cealis-player-capsule {
+    width: 50px;
+    height: 50px;
+    background-color: var(--cealis-jade-light);
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    border: 1px solid var(--cealis-charcoal);
+    position: relative;
+    z-index: 10002;
+  }
+
+  .cealis-player-capsule i {
+    font-size: 20px;
+    color: var(--cealis-charcoal);
+    transition: transform 0.5s ease;
+  }
+
+  /* 旋转动画 */
+  .cealis-spin {
+    animation: cealisSpin 4s linear infinite;
+  }
+
+  @keyframes cealisSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* 展开面板状态 */
+  .cealis-player-panel {
+    position: absolute;
+    top: 60px; 
+    right: 0;
+    width: 280px;
+    background-color: #f4f4f0;
+    border: 2px solid var(--cealis-jade-light);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.9) translateY(-10px);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: top right;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    z-index: 10000;
+  }
+
+  /* 状态切换逻辑 */
+  .cealis-player-container.expanded .cealis-player-capsule {
+    opacity: 1; /* 保持可见 */
+    pointer-events: auto;
+    transform: scale(1);
+    background-color: var(--cealis-charcoal);
+  }
+
+  .cealis-player-container.expanded .cealis-player-capsule i {
+    color: var(--cealis-jade-light);
+  }
+
+  .cealis-player-container.expanded .cealis-player-panel {
+    opacity: 1;
+    pointer-events: all;
+    transform: scale(1) translateY(0);
+  }
+
+  /* 播放器内部排版 */
+  .cealis-track-info {
+    text-align: center;
+  }
+
+  .cealis-track-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--cealis-charcoal);
+  }
+
+  .cealis-artist {
+    font-size: 12px;
+    color: var(--cealis-jade-light);
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  /* 进度条 */
+  .cealis-progress-area {
+    width: 100%;
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .cealis-progress-bar {
+    height: 100%;
+    background: var(--cealis-charcoal);
+    width: 0%;
+    border-radius: 2px;
+    position: relative;
+    transition: width 0.1s linear;
+  }
+
+  /* 控制按钮组 */
+  .cealis-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+  }
+
+  .cealis-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--cealis-charcoal);
+    font-size: 16px;
+    transition: color 0.2s, transform 0.2s;
+    padding: 8px;
+  }
+
+  .cealis-btn:hover {
+    color: var(--cealis-jade-light);
+    transform: scale(1.1);
+  }
+
+  .cealis-play-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--cealis-charcoal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .cealis-play-btn:hover {
+    background: var(--cealis-charcoal);
+    color: #fff;
+  }
+
+  /* 歌单列表 */
+  .cealis-playlist {
+    max-height: 120px;
+    overflow-y: auto;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    font-size: 12px;
+  }
+  
+  .cealis-playlist::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .cealis-playlist::-webkit-scrollbar-thumb {
+    background: var(--cealis-jade-light);
+    border-radius: 2px;
+  }
+
+  .cealis-playlist-item {
+    padding: 6px 8px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    transition: background 0.2s;
+    border-radius: 4px;
+    margin-bottom: 2px;
+  }
+
+  .cealis-playlist-item:hover {
+    background: rgba(178, 181, 156, 0.1);
+  }
+
+  .cealis-playlist-item.active {
+    background: var(--cealis-jade-light);
+    color: #fff;
+  }
+
+  /* 收起按钮 */
+  .cealis-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #aaa;
+    transition: color 0.2s;
+    z-index: 10003;
+  }
+
+  .cealis-close-btn:hover {
+    color: var(--cealis-charcoal);
+  }
+
+  /* --- 全局落雨特效 --- */
+  .cealis-rain-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9998;
+    overflow: hidden;
+    display: none;
+  }
+
+  .cealis-raindrop {
+    position: absolute;
+    background: var(--cealis-charcoal);
+    width: 1px;
+    height: 60px;
+    top: -60px;
+    opacity: 0.15; /* 降低透明度让效果更柔和 */
+    animation: cealisFall linear forwards;
+  }
+
+  @keyframes cealisFall {
+    to {
+      transform: translateY(calc(100vh + 60px));
+    }
+  }
+
+  /* 修复点击区域问题 */
+  * {
+    box-sizing: border-box;
+  }
+</style>
+</head>
+<body>
+
+<div class="cealis-player-container" id="cealisPlayer">
+  <div class="cealis-player-capsule" onclick="cealisTogglePlayer()">
+    <i class="fas fa-compact-disc" id="cealisMiniIcon"></i>
+  </div>
+
+
+  <div class="cealis-player-panel">
+    <i class="fas fa-times cealis-close-btn" onclick="cealisTogglePlayer()"></i>
+    
+    <div class="cealis-track-info">
+      <div class="cealis-track-title" id="cealisTitle">难生恨</div>
+      <div class="cealis-artist">竹漪</div>
+    </div>
+
+    <div class="cealis-progress-area" id="cealisProgressArea">
+      <div class="cealis-progress-bar" id="cealisProgressBar"></div>
+    </div>
+
+    <div class="cealis-controls">
+      <button class="cealis-btn" onclick="cealisPrevTrack()"><i class="fas fa-backward"></i></button>
+      <button class="cealis-btn cealis-play-btn" onclick="cealisPlayPause()">
+        <i class="fas fa-play" id="cealisPlayIcon"></i>
+      </button>
+      <button class="cealis-btn" onclick="cealisNextTrack()"><i class="fas fa-forward"></i></button>
+    </div>
+
+    <div class="cealis-playlist" id="cealisPlaylist">
+      <!-- 列表由JS生成 -->
+    </div>
+  </div>
+</div>
+
+    <!-- 落雨层 -->
+    <div class="cealis-rain-layer" id="cealisRainLayer"></div>
+
+    <!-- 音频核心 -->
+    <audio id="cealisAudio" preload="metadata"></audio>
+
+<script>
+  // 歌单数据
+  const cealisSongs = [
+    { title: "难生恨", url: "https://files.catbox.moe/955zcs.mp3" },
+    { title: "浪费", url: "https://files.catbox.moe/uyd53w.mp3" },
+    { title: "深海的星星", url: "https://files.catbox.moe/2mb6ll.mp3" },
+    { title: "一万小时", url: "https://files.catbox.moe/n1f3vc.mp3" }
+  ];
+
+  let cealisCurrentIndex = 0;
+  let cealisIsPlaying = false;
+  let cealisRainInterval = null;
+
+  const audio = document.getElementById('cealisAudio');
+  const playIcon = document.getElementById('cealisPlayIcon');
+  const miniIcon = document.getElementById('cealisMiniIcon');
+  const titleEl = document.getElementById('cealisTitle');
+  const progressArea = document.getElementById('cealisProgressArea');
+  const progressBar = document.getElementById('cealisProgressBar');
+  const playlistEl = document.getElementById('cealisPlaylist');
+  const rainLayer = document.getElementById('cealisRainLayer');
+  const playerContainer = document.getElementById('cealisPlayer');
+
+  // 初始化
+  function cealisInit() {
+    cealisRenderPlaylist();
+    cealisLoadSong(cealisSongs[0]);
+    
+    // 音频事件监听
+    audio.addEventListener('timeupdate', cealisUpdateProgress);
+    audio.addEventListener('ended', cealisNextTrack);
+    audio.addEventListener('loadedmetadata', () => {
+      console.log('音频已加载，时长:', audio.duration);
+    });
+    
+    // 进度条点击事件
+    progressArea.addEventListener('click', (e) => {
+      if (!audio.duration) return;
+      const width = progressArea.clientWidth;
+      const clickX = e.offsetX;
+      const duration = audio.duration;
+      audio.currentTime = (clickX / width) * duration;
+    });
+    
+    // 防止面板点击事件冒泡到容器
+    document.querySelector('.cealis-player-panel').addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    
+    console.log('播放器初始化完成');
+  }
+
+  // 加载歌曲
+  function cealisLoadSong(song) {
+    titleEl.innerText = song.title;
+    audio.src = song.url;
+    cealisUpdateActiveItem();
+    
+    // 重置进度条
+    progressBar.style.width = '0%';
+    
+    // 如果当前正在播放，自动播放新歌曲
+    if (cealisIsPlaying) {
+      audio.play().catch(e => {
+        console.log('自动播放失败:', e);
+        cealisIsPlaying = false;
+        playIcon.classList.replace('fa-pause', 'fa-play');
+        miniIcon.classList.remove('cealis-spin');
+      });
+    }
+  }
+
+  // 播放/暂停逻辑
+  function cealisPlayPause() {
+    if (cealisIsPlaying) {
+      cealisPauseMusic();
+    } else {
+      cealisPlayMusic();
+    }
+  }
+
+  function cealisPlayMusic() {
+    audio.play().then(() => {
+      cealisIsPlaying = true;
+      playIcon.classList.replace('fa-play', 'fa-pause');
+      miniIcon.classList.add('cealis-spin');
+      cealisToggleRain(true);
+      console.log('开始播放');
+    }).catch(e => {
+      console.log('播放失败:', e);
+      // 如果自动播放被阻止，显示用户交互提示
+      alert('请点击播放按钮开始播放');
+    });
+  }
+
+  function cealisPauseMusic() {
+    audio.pause();
+    cealisIsPlaying = false;
+    playIcon.classList.replace('fa-pause', 'fa-play');
+    miniIcon.classList.remove('cealis-spin');
+    cealisToggleRain(false);
+    console.log('暂停播放');
+  }
+
+  // 切歌逻辑
+  function cealisPrevTrack() {
+    cealisCurrentIndex--;
+    if (cealisCurrentIndex < 0) cealisCurrentIndex = cealisSongs.length - 1;
+    cealisLoadSong(cealisSongs[cealisCurrentIndex]);
+    if (cealisIsPlaying) {
+      cealisPlayMusic();
+    }
+  }
+
+  function cealisNextTrack() {
+    cealisCurrentIndex++;
+    if (cealisCurrentIndex > cealisSongs.length - 1) cealisCurrentIndex = 0;
+    cealisLoadSong(cealisSongs[cealisCurrentIndex]);
+    if (cealisIsPlaying) {
+      cealisPlayMusic();
+    }
+  }
+
+  // 渲染播放列表
+  function cealisRenderPlaylist() {
+    playlistEl.innerHTML = '';
+    cealisSongs.forEach((song, index) => {
+      const li = document.createElement('div');
+      li.classList.add('cealis-playlist-item');
+      if (index === cealisCurrentIndex) {
+        li.classList.add('active');
+      }
+      li.innerHTML = `<span>${index + 1}. ${song.title}</span>`;
+      li.onclick = () => {
+        cealisCurrentIndex = index;
+        cealisLoadSong(song);
+        cealisPlayMusic();
+      };
+      playlistEl.appendChild(li);
+    });
+  }
+
+  function cealisUpdateActiveItem() {
+    const items = document.querySelectorAll('.cealis-playlist-item');
+    items.forEach((item, index) => {
+      if (index === cealisCurrentIndex) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+  }
+
+  // 进度条更新
+  function cealisUpdateProgress() {
+    if (!audio.duration) return;
+    const progressPercent = (audio.currentTime / audio.duration) * 100;
+    progressBar.style.width = `${progressPercent}%`;
+  }
+
+  // 界面展开/收起
+  function cealisTogglePlayer() {
+    playerContainer.classList.toggle('expanded');
+  }
+
+  // --- 落雨特效系统 ---
+  function cealisToggleRain(enable) {
+    if (enable && !cealisRainInterval) {
+      rainLayer.style.display = 'block';
+      // 初始创建一些雨滴
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => cealisCreateRaindrop(), i * 50);
+      }
+      // 持续创建雨滴
+      cealisRainInterval = setInterval(cealisCreateRaindrop, 150);
+      console.log('开启落雨效果');
+    } else if (!enable && cealisRainInterval) {
+      rainLayer.style.display = 'none';
+      clearInterval(cealisRainInterval);
+      cealisRainInterval = null;
+      // 不清空DOM，让动画自然结束
+      console.log('关闭落雨效果');
+    }
+  }
+
+  function cealisCreateRaindrop() {
+    const drop = document.createElement('div');
+    drop.classList.add('cealis-raindrop');
+    
+    // 随机位置和动画参数
+    const left = Math.random() * 100;
+    const duration = Math.random() * 1 + 1.5; // 1.5-2.5秒
+    const opacity = Math.random() * 0.2 + 0.05; // 0.05-0.25
+    
+    drop.style.left = left + 'vw';
+    drop.style.animationDuration = duration + 's';
+    drop.style.opacity = opacity;
+    drop.style.height = (Math.random() * 40 + 40) + 'px'; // 40-80px
+    
+    rainLayer.appendChild(drop);
+    
+    // 动画结束后移除元素
+    setTimeout(() => {
+      if (drop.parentNode === rainLayer) {
+        drop.remove();
+      }
+    }, duration * 1000);
+  }
+
+  // 页面加载完成后初始化
+  document.addEventListener('DOMContentLoaded', cealisInit);
+  
+  // 防止点击面板外部时收起面板
+  document.addEventListener('click', (e) => {
+    if (!playerContainer.contains(e.target) && playerContainer.classList.contains('expanded')) {
+      playerContainer.classList.remove('expanded');
+    }
+  });
+</script>
+</body>
+</html>
