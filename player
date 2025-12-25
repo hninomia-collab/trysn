@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* --- Velvet Night 配色系统 --- */
+        :root {
+          --bg-deep: #31243f;    /* 深紫夜 */
+          --text-gold: #c3c98d;  /* 橄榄金 */
+          --text-dim: rgba(195, 201, 141, 0.5);
+          --transition: cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性物理动画 */
+        }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+          margin: 0;
+          padding: 10px;
+          font-family: 'Helvetica Neue', Helvetica, sans-serif;
+          display: flex;
+          justify-content: flex-end; /* 靠右对齐 */
+          background: transparent;
+          overflow: hidden;
+        }
+        /* --- 灵动岛主体 --- */
+        .island {
+          background: var(--bg-deep);
+          width: 140px;
+          height: 40px;
+          border-radius: 40px;
+          color: var(--text-gold);
+          border: 1px solid var(--text-gold);
+          position: relative;
+          transition: all 0.5s var(--transition);
+          overflow: hidden;
+          cursor: pointer;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+          margin-right: 10px; /* 右侧留白 */
+        }
+        /* 展开状态 */
+        .island.expanded {
+          width: 280px;
+          height: 160px;
+          border-radius: 24px;
+        }
+        /* --- Mini 模式 --- */
+        .mini-view {
+          width: 100%; height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+          opacity: 1;
+          transition: opacity 0.2s;
+        }
+        .island.expanded .mini-view { opacity: 0; pointer-events: none; position: absolute; }
+        .wave-box { display: flex; gap: 3px; align-items: center; }
+        .bar { 
+          width: 3px; background: var(--text-gold); border-radius: 2px;
+          animation: bounce 1s infinite ease-in-out; 
+        }
+        .bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+        .bar:nth-child(2) { height: 14px; animation-delay: 0.1s; }
+        .bar:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+        
+        .mini-title { font-size: 10px; font-weight: 800; letter-spacing: 1px; }
+        @keyframes bounce { 0%, 100% { transform: scaleY(0.5); } 50% { transform: scaleY(1); } }
+        /* --- Expanded 模式 --- */
+        .full-view {
+          width: 100%; height: 100%;
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          opacity: 0;
+          transition: opacity 0.3s ease 0.1s;
+        }
+        .island.expanded .full-view { opacity: 1; }
+        .info-row {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 15px;
+        }
+        .cover-art {
+          width: 50px; height: 50px;
+          border: 1px solid var(--text-gold);
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 20px;
+        }
+        .meta {
+          display: flex; flex-direction: column; justify-content: center;
+          overflow: hidden;
+        }
+        .track-name { font-size: 14px; font-weight: bold; white-space: nowrap; }
+        .artist-name { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+        .progress-rail {
+          width: 100%; height: 4px;
+          background: rgba(195, 201, 141, 0.2);
+          border-radius: 2px;
+          margin-bottom: 15px;
+          overflow: hidden;
+        }
+        .progress-fill {
+          height: 100%; width: 0%;
+          background: var(--text-gold);
+          transition: width 0.2s linear;
+        }
+        .controls {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 0 20px;
+        }
+        
+        .btn { cursor: pointer; opacity: 0.8; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.9); }
+        .btn svg { fill: var(--text-gold); width: 20px; height: 20px; }
+        .btn-play svg { width: 30px; height: 30px; }
+        /* 关闭按钮 (底部横条) */
+        .handle {
+          width: 40px; height: 4px;
+          background: var(--text-dim);
+          border-radius: 2px;
+          margin: 0 auto;
+          margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="island" id="player">
+        <!-- Mini State -->
+        <div class="mini-view">
+          <div class="wave-box">
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+          </div>
+          <div class="mini-title">VELVET FM</div>
+        </div>
+        <!-- Expanded State -->
+        <div class="full-view">
+          <div class="info-row">
+          <div class="cover-art">♪</div>
+          <div class="meta">
+          <div class="track-name" id="title">Loading...</div>
+          <div class="artist-name" id="artist">System Audio</div>
+          </div>
+          </div>
+          
+          <div class="progress-rail"><div class="progress-fill" id="prog"></div></div>
+          
+          <div class="controls">
+          <div class="btn" onclick="playPrev()">
+          <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </div>
+          <div class="btn btn-play" onclick="toggle()" id="playBtn">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          <div class="btn" onclick="playNext()">
+          <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+          </div>
+          </div>
+          
+          <div class="handle" onclick="closeIsland(event)"></div>
+        </div>
+    </div>
+    <script>
+        /* --- 播放列表配置 --- */
+        const tracks = [
+          { t: "难生恨", a: "Cealis Mix", u: "https://files.catbox.moe/955zcs.mp3" },
+          { t: "浪费", a: "City Echo", u: "https://files.catbox.moe/uyd53w.mp3" },
+        ];
+        /* --- 核心逻辑 --- */
+        let idx = 0;
+        let isPlaying = false;
+        const audio = new Audio();
+        const player = document.getElementById('player');
+        const titleEl = document.getElementById('title');
+        const artistEl = document.getElementById('artist');
+        const progEl = document.getElementById('prog');
+        
+        // SVG 图标数据
+        const iconPlay = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        const iconPause = '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+        // 初始化
+        function load(i) {
+          const t = tracks[i];
+          titleEl.innerText = t.t;
+          artistEl.innerText = t.a;
+          audio.src = t.u;
+          progEl.style.width = '0%';
+        }
+        load(idx);
+        // 展开/收起
+        player.addEventListener('click', () => {
+          if(!player.classList.contains('expanded')) player.classList.add('expanded');
+        });
+        window.closeIsland = (e) => {
+          e.stopPropagation();
+          player.classList.remove('expanded');
+        };
+        // 播放控制
+        window.toggle = () => {
+          if(isPlaying) {
+          audio.pause();
+          document.getElementById('playBtn').innerHTML = iconPlay;
+          } else {
+          audio.play();
+          document.getElementById('playBtn').innerHTML = iconPause;
+          }
+          isPlaying = !isPlaying;
+        };
+        window.playNext = () => {
+          idx = (idx + 1) % tracks.length;
+          load(idx);
+          if(isPlaying) audio.play();
+        };
+        window.playPrev = () => {
+          idx = (idx - 1 + tracks.length) % tracks.length;
+          load(idx);
+          if(isPlaying) audio.play();
+        };
+        // 进度条与自动切歌
+        audio.ontimeupdate = () => {
+          if(audio.duration) {
+          const pct = (audio.currentTime / audio.duration) * 100;
+          progEl.style.width = pct + '%';
+          }
+        };
+        
+        audio.onended = () => playNext();
+    </script>
+</body>
+</html>
